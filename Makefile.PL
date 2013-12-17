@@ -3,15 +3,15 @@ require 5.008001;
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-  'EXE_FILES' => [],
   'NAME' => 'AnyEvent::DNS::EtcHosts',
-  'PREREQ_PM' => {
-                   'Test::Deep' => 0,
-                   'Test::More' => '0.98',
-                   'AnyEvent' => '7'
-                 },
+  'INSTALLDIRS' => 'site',
   'VERSION_FROM' => 'lib/AnyEvent/DNS/EtcHosts.pm',
   'PL_FILES' => {},
-  'INSTALLDIRS' => 'site'
+  'EXE_FILES' => [],
+  'PREREQ_PM' => {
+                   'Test::More' => '0.98',
+                   'Test::Deep' => 0,
+                   'AnyEvent' => '7'
+                 }
 )
 ;

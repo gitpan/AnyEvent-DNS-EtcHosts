@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Carp ();
+use Carp 'verbose';
 
 $SIG{__WARN__} = sub { local $Carp::CarpLevel = 1; Carp::confess("Warning: ", @_) };
 
@@ -16,7 +16,7 @@ use Test::Deep;
 
 use File::Temp 'tempfile';
 
-my ($fh, $filename) = tempfile(TMPDIR => 1);
+my ($fh, $filename) = tempfile TMPDIR => 1, UNLINK => 1;
 ok $filename;
 
 print { $fh } << 'END';

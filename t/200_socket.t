@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Carp ();
+use Carp 'verbose';
 
 $SIG{__WARN__} = sub { local $Carp::CarpLevel = 1; Carp::confess("Warning: ", @_) };
 
@@ -16,7 +16,7 @@ use Test::Deep;
 
 use File::Temp 'tempfile';
 
-my ($fh, $filename) = tempfile(TMPDIR => 1);
+my ($fh, $filename) = tempfile TMPDIR => 1, UNLINK => 1;
 ok $filename;
 
 print { $fh } << 'END';
@@ -34,13 +34,14 @@ my $guard = AnyEvent::DNS::EtcHosts->register;
 ok $guard;
 
 use AnyEvent::Socket;
+use AnyEvent::Util 'AF_INET6';
 
 {
     ok my $cv = AE::cv;
 
-    AnyEvent::Socket::resolve_sockaddr 'example.com', 'http', 'tcp', 0, undef, sub {
+    AnyEvent::Socket::resolve_sockaddr 'example.com', 'http=80', 'tcp', 0, undef, sub {
         cmp_deeply [ map { format_address((AnyEvent::Socket::unpack_sockaddr($_->[3]))[1]) } @_ ],
-                   [ qw(1.2.3.4 5.6.7.8 fe00::1234) ];
+                   [ AF_INET6 ? qw(1.2.3.4 5.6.7.8 fe00::1234) : qw(1.2.3.4 5.6.7.8) ];
         $cv->send;
     };
 
@@ -53,7 +54,7 @@ use AnyEvent::Socket;
 
     AnyEvent::Socket::resolve_sockaddr 'example.com', 80, 'tcp', 0, undef, sub {
         cmp_deeply [ map { format_address((AnyEvent::Socket::unpack_sockaddr($_->[3]))[1]) } @_ ],
-                   [ qw(1.2.3.4 5.6.7.8 fe00::1234) ];
+                   [ AF_INET6 ? qw(1.2.3.4 5.6.7.8 fe00::1234) : qw(1.2.3.4 5.6.7.8) ];
         $cv->send;
     };
 
@@ -64,7 +65,7 @@ use AnyEvent::Socket;
 {
     ok my $cv = AE::cv;
 
-    AnyEvent::Socket::resolve_sockaddr 'example.com', 'http', 'tcp', 4, undef, sub {
+    AnyEvent::Socket::resolve_sockaddr 'example.com', 'http=80', 'tcp', 4, undef, sub {
         cmp_deeply [ map { format_address((AnyEvent::Socket::unpack_sockaddr($_->[3]))[1]) } @_ ],
                    [ qw(1.2.3.4 5.6.7.8) ];
         $cv->send;
@@ -77,9 +78,9 @@ use AnyEvent::Socket;
 {
     ok my $cv = AE::cv;
 
-    AnyEvent::Socket::resolve_sockaddr 'example.com', 'http', 'tcp', 6, undef, sub {
+    AnyEvent::Socket::resolve_sockaddr 'example.com', 'http=80', 'tcp', 6, undef, sub {
         cmp_deeply [ map { format_address((AnyEvent::Socket::unpack_sockaddr($_->[3]))[1]) } @_ ],
-                   [ qw(fe00::1234) ];
+                   [ AF_INET6 ? qw(fe00::1234) : qw() ];
         $cv->send;
     };
 

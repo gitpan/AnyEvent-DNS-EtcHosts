@@ -4,8 +4,12 @@ examples/dns.pl
 examples/lexical.pl
 examples/socket.pl
 lib/AnyEvent/DNS/EtcHosts.pm
+LICENSE
+Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+META.json
+META.yml
 README
 README.md
 t/010_use.t
@@ -31,8 +35,4 @@ xt/pod_spellrc
 xt/pod_syntax.t
 xt/portability_files.t
 xt/signature.t
-Makefile.PL
-LICENSE
-META.yml
-META.json
 SIGNATURE    Added here by Module::Build
