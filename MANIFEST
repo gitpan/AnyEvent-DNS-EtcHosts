@@ -35,4 +35,3 @@ xt/pod_spellrc
 xt/pod_syntax.t
 xt/portability_files.t
 xt/signature.t
-SIGNATURE    Added here by Module::Build

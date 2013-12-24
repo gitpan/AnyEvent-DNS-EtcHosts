@@ -4,14 +4,14 @@ use ExtUtils::MakeMaker;
 WriteMakefile
 (
   'NAME' => 'AnyEvent::DNS::EtcHosts',
-  'INSTALLDIRS' => 'site',
+  'PREREQ_PM' => {
+                   'AnyEvent' => '7',
+                   'Test::Deep' => 0,
+                   'Test::More' => '0.98'
+                 },
   'VERSION_FROM' => 'lib/AnyEvent/DNS/EtcHosts.pm',
   'PL_FILES' => {},
-  'EXE_FILES' => [],
-  'PREREQ_PM' => {
-                   'Test::More' => '0.98',
-                   'Test::Deep' => 0,
-                   'AnyEvent' => '7'
-                 }
+  'INSTALLDIRS' => 'site',
+  'EXE_FILES' => []
 )
 ;
