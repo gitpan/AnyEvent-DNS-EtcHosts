@@ -51,7 +51,7 @@ use 5.008_001;
 use strict;
 use warnings;
 
-our $VERSION = '0.0102';
+our $VERSION = '0.0103';
 
 use base 'AnyEvent::DNS';
 
@@ -173,13 +173,13 @@ sub _parse_hosts($) {
       my ($addr, @aliases) = split /[ \t]+/;
       next unless @aliases;
 
-      if (my $ip = AnyEvent::Socket::parse_ipv4 $addr) {
-         ($ip) = $ip =~ /^(.*)$/s if AnyEvent::TAINT;
-         push @{ $HOSTS{$_}[0] }, $ip
+      if (my $ipv4 = AnyEvent::Socket::parse_ipv4 $addr) {
+         ($ipv4) = $ipv4 =~ /^(.*)$/s if AnyEvent::TAINT;
+         push @{ $HOSTS{$_}[0] }, $ipv4
             for @aliases;
-      } elsif ($ip = AnyEvent::Socket::parse_ipv6 $addr) {
-         ($ip) = $ip =~ /^(.*)$/s if AnyEvent::TAINT;
-         push @{ $HOSTS{$_}[1] }, $ip
+      } elsif (my $ipv6 = AnyEvent::Socket::parse_ipv6 $addr) {
+         ($ipv6) = $ipv6 =~ /^(.*)$/s if AnyEvent::TAINT;
+         push @{ $HOSTS{$_}[1] }, $ipv6
             for @aliases;
       }
    }
@@ -244,6 +244,8 @@ sub request {
     my (@ipv4, @ipv6, @srv);
 
     my $cv = AE::cv;
+
+    $cv->begin;
     _load_hosts_unless {
         if (exists $HOSTS{$node}) {
             if ($type =~ /^([*]|srv)$/) {
@@ -258,40 +260,43 @@ sub request {
                 }
             }
         }
+
+        if (@ipv4 or @ipv6 or @srv) {
+            my $res = {
+                id => int rand(0xffff),
+                op => 'query',
+                rc => 'noerror',
+                qr => 1,
+                aa => '',
+                tc => '',
+                rd => $req->{rd},
+                ra => 1,
+                ad => '',
+                cd => '',
+                qd => $req->{qd},
+                an => [
+                    (map { [ $domain, 'srv', 'in', 0, 0, 0, 0, $_ ] } @srv),
+                    (map { [ $node, 'a', 'in', 0, AnyEvent::Socket::format_ipv4 $_ ] } @ipv4),
+                    (map { [ $node, 'aaaa', 'in', 0, AnyEvent::Socket::format_ipv6 $_ ] } @ipv6),
+                ],
+                ns => [],
+                ar => [],
+            };
+
+            warn "res = ". Dumper $res if DEBUG;
+
+            return $cb->($res);
+        }
+
+        return $self->SUPER::request($req, sub {
+            my ($res) = @_;
+            warn "SUPER::request res = ". Dumper $res if DEBUG;
+            $cb->($res);
+        });
+
     } $cv;
 
-    if (@ipv4 or @ipv6 or @srv) {
-        my $res = {
-            id => int rand(0xffff),
-            op => 'query',
-            rc => 'noerror',
-            qr => 1,
-            aa => '',
-            tc => '',
-            rd => $req->{rd},
-            ra => 1,
-            ad => '',
-            cd => '',
-            qd => $req->{qd},
-            an => [
-                (map { [ $domain, 'srv', 'in', 0, 0, 0, 0, $_ ] } @srv),
-                (map { [ $node, 'a', 'in', 0, AnyEvent::Socket::format_ipv4 $_ ] } @ipv4),
-                (map { [ $node, 'aaaa', 'in', 0, AnyEvent::Socket::format_ipv6 $_ ] } @ipv6),
-            ],
-            ns => [],
-            ar => [],
-        };
-
-        warn "res = ". Dumper $res if DEBUG;
-
-        return $cb->($res);
-    }
-
-    return $self->SUPER::request($req, sub {
-        my ($res) = @_;
-        warn "SUPER::request res = ". Dumper $res if DEBUG;
-        $cb->($res);
-    });
+    return;
 }
 
 
@@ -324,7 +329,7 @@ Marc Lehmann <schmorp@schmorp.de>
 
 =head1 LICENSE
 
-Copyright (c) 2013 Piotr Roszatycki <dexter@cpan.org>.
+Copyright (c) 2013-2014 Piotr Roszatycki <dexter@cpan.org>.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as perl itself.
